@@ -1,143 +1,85 @@
-
-
-# Newton's Method: Approximating Square Roots
-#s1111596_s1099248, Araz Jabrayilov_TIAN
-# Original source description from the supplied file:
-# This is a Python port of the LISP implementation described in
-# "Structure and Interpretation of Computer Programs" by Abelson/Sussman,
-# book page 28: https://web.mit.edu/6.001/6.037/sicp.pdf
+# 牛顿法原始程序：中文注释对照版
+# 保留 Downloads/newton.py 的六个函数、参数和计算逻辑。
+# 它用于理解原算法；作业任务 1、2 的改写位于 hop_decorator.py。
 #
-# PROGRAM OBJECTIVE
-# Find an approximate square root of a positive number x.
-# A square root is a number whose square equals x.
-# For example, the positive square root of 9 is 3 because 3 * 3 = 9.
+# 原文件说明：本程序根据 Abelson/Sussman 的
+# Structure and Interpretation of Computer Programs（书本页码 28）
+# 中的 LISP 平方根算法改写为 Python。
+# 原文件给出的来源：https://web.mit.edu/6.001/6.037/sicp.pdf
 #
-# MAIN IDEA
-# 1. Start with a guess of 1.0.
-# 2. Check whether the square of the guess is close enough to x.
-# 3. If not, improve the guess using: (guess + x / guess) / 2.
-# 4. Repeat until the stopping condition is satisfied.
-#
-# This annotated version preserves all six original functions and their logic.
-# The examples at the bottom remain commented out, as in the supplied file.
-# No imports or additional libraries are required.
+# 目标：给定 x，找一个数 guess，使 guess * guess 足够接近 x。
+# 比如 x = 9 时，我们希望最后得到接近 3 的结果。
+# 方法：从 1.0 开始，不断使用 (guess + x / guess) / 2 改进猜测值。
 
 
-# ---------------------------------------------------------------------------
-# 1. Calculate the square of a number.
-# ---------------------------------------------------------------------------
 def square(x):
-    # x is the argument received by this particular function call.
-    # Multiplying a number by itself gives its square: square(3) returns 9.
-    # return sends the result back to the caller; it does not print anything.
+    """计算平方。"""
+    # 例如 square(3) 返回 9；return 返回结果，不负责打印。
     return x * x
 
 
-# ---------------------------------------------------------------------------
-# 2. Calculate the arithmetic mean of two numbers.
-# ---------------------------------------------------------------------------
 def average(x, y):
-    # Add the two arguments and divide their sum by 2.
-    # Parentheses make the addition happen before the division.
-    # For example, average(1.0, 9.0) returns 5.0.
-    # In Python 3, / performs division and produces a floating-point result
-    # for these ordinary integer or floating-point inputs.
+    """计算两个数的平均值。"""
+    # 先计算括号中的和，再除以 2。
     return (x + y) / 2
 
 
-# ---------------------------------------------------------------------------
-# 3. Decide whether the current guess is accurate enough.
-# ---------------------------------------------------------------------------
 def isGoodEnough(guess, x):
-    # guess is the current approximation; x is the original target number.
-    # square(guess) calls the helper function defined above.
-    # Subtracting x measures how far the squared guess is from the target.
-    # abs() removes the sign, so errors on either side are treated equally.
-    # The comparison returns a Boolean value: either True or False.
-    #
-    # Example: for guess = 3.0001 and x = 9,
-    # abs(3.0001 * 3.0001 - 9) is about 0.00060001, so this returns True.
-    #
-    # IMPORTANT: 0.001 is a tolerance for the SQUARED guess, not for the
-    # difference between guess and the exact square root. It does not mean
-    # that every returned square root is correct to three decimal places.
+    """检查猜测值的平方是否已经足够接近目标 x。"""
+    # guess 是当前猜测值；x 是要求平方根的目标数。
+    # abs 取绝对值；比较表达式的结果为 True 或 False。
+    # 注意：误差标准针对 guess 的平方，不保证平方根的小数位数。
     return abs(square(guess) - x) < 0.001
 
 
-# ---------------------------------------------------------------------------
-# 4. Produce a better approximation using Newton's update formula.
-# ---------------------------------------------------------------------------
 def improve(guess, x):
-    # When guess is positive and too small, x / guess is above the root.
-    # When guess is positive and too large, x / guess is below the root.
-    # Taking their average produces the next guess.
-    #
-    # Python first evaluates x / guess and then calls average().
-    # Example: improve(1.0, 9) calls average(1.0, 9.0), returning 5.0.
-    # The next improvement is average(5.0, 9 / 5.0), which returns 3.4.
-    #
-    # guess must not be zero because x / guess would divide by zero.
-    # For ordinary positive inputs, starting at 1.0 keeps guesses positive.
+    """根据当前猜测值计算一个更好的猜测值。"""
+    # 对正数 x 和正的 guess：
+    # guess 小于平方根时，x / guess 大于平方根；反过来也成立。
+    # 将这两个值取平均，可以逐渐得到更准确的猜测。
+    # 例如 x = 9、guess = 1 时，下一次猜测是 (1 + 9) / 2 = 5。
+    # guess 不能为 0，否则 x / guess 会产生除零错误。
     return average(guess, x / guess)
 
 
-# ---------------------------------------------------------------------------
-# 5. Repeat the approximation process using recursion.
-# ---------------------------------------------------------------------------
 def sqrtIter(guess, x):
-    # Recursion means that a function calls itself.
-    # Each call receives the current guess and the unchanged target x.
+    """通过递归不断检查和改进猜测值。"""
+    # 每次调用都先检查是否满足停止条件。
     if isGoodEnough(guess, x):
-        # BASE CASE: the stopping condition is satisfied.
-        # Return the approximation without making another recursive call.
+        # 满足条件：返回答案，不再继续递归。
         return guess
     else:
-        # RECURSIVE CASE: the current approximation is not accurate enough.
-        # First, improve(guess, x) calculates a new guess.
-        # Then, sqrtIter(new_guess, x) checks that new guess in another call.
-        # The target x stays the same; only the guess changes.
-        #
-        # The outer return is essential: it passes the result of the deeper
-        # call back through the earlier calls to the original caller.
-        # Without it, this branch would return None after the inner call ends.
+        # 不满足条件：先算 improve(guess, x)，再递归调用 sqrtIter。
+        # 下一层调用接收新的 guess，但目标 x 始终不变。
+        # return 把下一层得到的答案传回本层，再逐层传给最初的调用者。
         return sqrtIter(improve(guess, x), x)
 
 
-# ---------------------------------------------------------------------------
-# 6. Provide a simple starting function for the user.
-# ---------------------------------------------------------------------------
 def newton(x):
-    # The caller only supplies the number whose square root is needed.
-    # This function chooses 1.0 as the initial guess and starts the recursion.
-    # It returns the approximation produced by sqrtIter().
+    """从猜测值 1.0 开始，求 x 的近似平方根。"""
+    # 调用者只需要提供 x，不必自己选择初值或调用其他辅助函数。
     return sqrtIter(1.0, x)
 
 
-# EXAMPLE CALL SEQUENCE FOR newton(9)
+# 执行 newton(9) 时的调用顺序：
 # newton(9)
 #   -> sqrtIter(1.0, 9)
 #   -> sqrtIter(5.0, 9)
 #   -> sqrtIter(3.4, 9)
 #   -> sqrtIter(3.023529411764706, 9)
 #   -> sqrtIter(3.00009155413138, 9)
-# At the last step, the squared error is less than 0.001.
-# That guess is returned through the recursive calls and finally to the user.
-# These steps describe separate function calls, not a list built by the code.
+# 最后一个猜测值的平方与 9 的差的绝对值小于 0.001，因此停止。
 #
-# LIMITATIONS OF THE ORIGINAL TEACHING EXAMPLE
-# The intended inputs are ordinary positive numbers.
-# Negative inputs are not validated and are outside this real-root example.
-# The fixed squared-error tolerance gives poor relative accuracy near zero.
-# For x = 0, for example, the returned approximation is 0.03125, not exactly 0.
-# Very large inputs can encounter floating-point or recursion limitations.
-# These limitations are documented here without changing the original method.
+# 与任务 1 对照：
+# 原程序每次都把 x 传给辅助函数；任务 1 把它们移入 newton，
+# 使它们直接读取外层的 x，从而省去重复的 x 参数。
 #
-# OPTIONAL DEMONSTRATION
-# Remove the leading # from each of the following three lines to enable it.
-# __name__ == "__main__" is True when this file is run directly.
-# If another file imports this module, the guarded examples will not run.
-# print() displays the returned approximation in the terminal.
-#
+# 原算法边界：普通正数是本题的预期输入。
+# 输入 0 会返回 0.03125；负数没有实数平方根，也未做输入检查。
+# 接近 0 或非常大的输入可能受到误差标准、浮点精度和递归深度限制。
+# 这里保留原算法，不额外改变这些行为。
+
+# 与原文件一样，演示默认注释掉；取消下面三行的注释即可直接运行。
 # if __name__ == "__main__":
-#     print(newton(4))  # Approximately 2.0000000929222947.
-#     print(newton(9))  # Approximately 3.00009155413138.
+#     print(newton(4))
+#     print(newton(9))

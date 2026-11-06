@@ -1,256 +1,246 @@
 ### Assignment hop_decorator ###
 
-# Student information: replace the placeholders below before submission.
-# s1111596_s1099248, Araz Jabrayilov_TIAN
-# If this is an individual submission, enter only your own information.
-
-# This assignment practices inner functions, scope, higher-order functions,
-# decorators, argument forwarding, execution timing, and memoization.
-# All implementation comments and explanations are in English.
+# s123456_s56789, YourLastname1_YourLastname2
+# 提交前：将上一行替换为实际提交者的学号和姓氏。
+#
+# 本文件完成题目中的五个任务。建议对照同目录的“题目解析.md”阅读。
+# newton.py 是老师提供的原始算法的中文注释版，用来和任务 1、2 对照。
+# 本文件独立运行，不需要导入 newton.py，也不需要安装第三方库。
 
 import time
 from functools import wraps
 
+# time：任务 4 用它获取时间戳。
+# wraps：让包装后的函数保留原函数的名称、说明文字等信息。
+# 例如，装饰 helperfunction 后，它的 __name__ 仍然是 "helperfunction"。
 
-# ===========================================================================
-# Task 1: Newton's Method using inner functions
-# ===========================================================================
-# Keep square() and average() as separate functions, as required.
-# Move isGoodEnough(), improve(), and sqrtIter() inside newton().
-# These inner functions can read x from the enclosing newton() call, so x
-# no longer needs to be passed as an argument to each helper function.
 
+# =====================================================================
+# Task 1：内部函数版牛顿法
+# 要求：保留 square、average；把另外三个辅助函数移入 newton。
+# =====================================================================
 
 def square(x):
-    """Return the square of x."""
-    # For example, square(3) returns 3 * 3, which is 9.
+    """返回 x 的平方。"""
+    # square(3) 的结果是 3 * 3，也就是 9。
     return x * x
 
 
 def average(x, y):
-    """Return the arithmetic mean of x and y."""
-    # Parentheses ensure that addition happens before division.
+    """返回 x 和 y 的算术平均值。"""
+    # 括号保证先相加，再除以 2。例如 average(1, 9) 返回 5.0。
     return (x + y) / 2
 
 
 def newton(x):
-    """Approximate a square root using the original recursive algorithm."""
-    # Each call to newton() has its own local x.
-    # The inner functions below can access that x through the enclosing scope.
-    # This is why their parameter lists contain only guess.
-    # No global variable or global declaration is needed.
+    """保留原始递归算法，通过内部函数近似计算 x 的平方根。"""
+    # 调用 newton(9) 时，这一次调用中的局部变量 x 就是 9。
+    # 下面三个函数定义在 newton 的内部，因此可以直接读取外层的 x。
+    # 原来辅助函数需要接收 (guess, x)，现在只需接收 (guess)。
+    # 这里没有给 x 重新赋值，所以不需要 global 或 nonlocal。
 
     def isGoodEnough(guess):
-        # Compare the squared approximation with the original target x.
-        # abs() makes the difference non-negative; < returns True or False.
-        # Keep the original tolerance: the absolute difference between the
-        # squared guess and x must be below 0.001.
-        # This is not a guarantee of three correct decimal places in the root.
+        # guess：当前猜测的平方根。
+        # square(guess) - x：猜测值的平方与目标数之间的差。
+        # abs(...)：取绝对值，消除正负号的影响。
+        # < 0.001：误差足够小时返回 True，否则返回 False。
+        # 注意：比较的是“guess 的平方”和 x，不是 guess 与真实平方根。
+        # 因而这里不能理解为“平方根一定精确到小数点后三位”。
         return abs(square(guess) - x) < 0.001
 
     def improve(guess):
-        # Newton's update for a square root is (guess + x / guess) / 2.
-        # Retain the average() helper instead of simplifying the expression.
-        # For x = 9 and guess = 1.0, the next guess is (1.0 + 9.0) / 2 = 5.0.
+        # 用牛顿法的更新公式改进猜测值：(guess + x / guess) / 2。
+        # 当 x = 9、guess = 1.0 时：average(1.0, 9 / 1.0) = 5.0。
+        # 这一题要求保留 average，因此仍然通过它计算平均值。
         return average(guess, x / guess)
 
     def sqrtIter(guess):
-        # Base case: stop making recursive calls once the guess is good enough.
+        # 递归的终止情况：猜测值已足够准确，直接返回。
         if isGoodEnough(guess):
             return guess
         else:
-            # First calculate an improved guess, then check it in another call.
-            # x stays available from newton(); it is not passed repeatedly.
-            # return passes the final answer back through the earlier calls.
+            # Python 先执行 improve(guess)，得到下一次猜测值，
+            # 再把新值交给 sqrtIter，重复检查。
+            # 例如 x = 9 时，猜测值依次约为 1、5、3.4、3.0235、3.00009。
+            # 外面的 return 必须保留，它把更深一层递归的结果传回来。
+            # 只有调用、没有 return，会使当前这一层最后返回 None。
             return sqrtIter(improve(guess))
 
-    # Defining the inner functions above does not run their bodies.
-    # This call starts the actual calculation with an initial guess of 1.0.
+    # 前面的 def 只是定义内部函数，尚未执行这些函数的计算过程。
+    # 走到这里才真正开始计算，初始猜测值固定为原程序中的 1.0。
     return sqrtIter(1.0)
 
 
-# ===========================================================================
-# Task 2: Newton's Method Simplified and Pythonified
-# ===========================================================================
-# Use a while loop to express repeated improvement directly.
-# Keep the same starting guess, update formula, and stopping tolerance.
-# Do not replace the algorithm with math.sqrt(x) or x ** 0.5.
-
+# =====================================================================
+# Task 2：用更简洁的 Python 写法实现牛顿法
+# 要求：仍然逐次改进猜测值；不能直接使用 math.sqrt 或 x ** 0.5。
+# =====================================================================
 
 def newtonPy(x):
-    """Approximate a square root using a loop instead of recursive calls."""
+    """用 while 循环代替递归，近似计算 x 的平方根。"""
+    # 保留与原程序相同的起点。
     guess = 1.0
 
-    # Keep improving while the squared guess differs too much from x.
-    # >= is the opposite of the original successful condition < 0.001.
+    # 只要误差还不满足要求，就继续循环。
+    # 原程序的停止条件是误差 < 0.001，因此继续条件是误差 >= 0.001。
     while abs(guess * guess - x) >= 0.001:
-        # The right-hand side uses the current guess.
-        # Assignment then replaces guess with the improved value.
+        # 先用旧的 guess 计算等号右边，再把计算结果存回 guess。
+        # 每轮循环都用新猜测值替换旧猜测值。
         guess = (guess + x / guess) / 2
 
-    # Reaching this line means the loop's condition has become False.
+    # 循环结束说明误差已满足停止条件，将最终猜测值交给调用者。
     return guess
 
 
-# Both Newton functions follow the original teaching example's numeric scope:
-# use ordinary positive numbers. Negative numbers are not supported here.
-# This fixed tolerance on the squared guess gives poor relative accuracy near zero;
-# for example, both functions return 0.03125 for x = 0 rather than exactly 0.
-# Extreme inputs can encounter floating-point limits; the recursive version
-# also has Python's recursion limit. A general-purpose numeric library would
-# need a more robust stopping rule and input validation.
+# 两个版本都保留老师原算法的初值、更新公式和误差标准。
+# 本题按普通正数输入理解，不额外加入通用数值库的输入检查。
+# 原方法在接近 0 时相对精度较差；例如输入 0 会返回 0.03125。
+# 原方法不支持负数的实数平方根，极端大数也可能遇到浮点数限制。
+# 这些是原教学算法的边界；任务 1 要求不做其他简化，因此保留其行为。
 
 
-# ===========================================================================
-# Task 3: log Decorator
-# ===========================================================================
-# A decorator receives a function and returns another function.
-# The returned wrapper adds behavior around a call to the original function.
+# =====================================================================
+# Task 3：log 装饰器——记录函数名、参数和返回值
+# =====================================================================
+# 函数也可以作为参数传给另一个函数，并作为返回值返回。
+# 装饰器 log(func) 接收原函数，返回一个增加了日志功能的新函数。
 #
-# Writing:
+# 写法：
 #     @log
-#     def helperfunction(a, b): ...
-# is equivalent to defining helperfunction first and then assigning:
+#     def helperfunction(a, b):
+#         return a + b
+#
+# 等价于先定义 helperfunction，再执行：
 #     helperfunction = log(helperfunction)
 #
-# log(func) runs when decoration happens. Its wrapper runs later, each time
-# the decorated function is called. These are two different moments.
-
+# 注意两个时刻：
+# 1. 执行带 @log 的函数定义时，调用 log，得到 wrapper。
+# 2. 以后调用 helperfunction(1, 2) 时，实际执行 wrapper(1, 2)。
 
 def log(func):
-    """Log a successful call's name, positional arguments, and result."""
+    """打印一次正常结束的函数调用，并保留原函数的返回值。"""
 
-    # wraps() preserves metadata such as the original function's name and
-    # docstring. It does not execute func or change its returned result.
     @wraps(func)
     def wrapper(*args):
-        # In a parameter list, *args collects positional arguments into a tuple.
-        # Calling helperfunction(1, 2) therefore gives args == (1, 2).
-        # An argument-free call gives the empty tuple ().
-        # In a call, *args does the reverse: it unpacks the tuple so func
-        # receives the original separate arguments, not one tuple argument.
+        # 在形参中，*args 把任意数量的位置参数收集成一个元组。
+        # 调用 helperfunction(1, 2) 时，args 就是 (1, 2)。
+        # 没有参数时，args 是空元组 ()。
+        # 在调用表达式 func(*args) 中，星号表示反过来“拆开”元组。
+        # 因此 func 接收到两个独立参数 1、2，而不是一个元组参数。
         result = func(*args)
 
-        # repr() creates a readable representation of each argument.
-        # For integers 1 and 2, argument_texts becomes ["1", "2"].
-        # Strings keep their quotes, making their type clearer in the log.
+        # repr 把每个参数转换为便于阅读的文字表示。
+        # 整数 1、2 变成字符串 "1"、"2"；字符串参数会保留引号。
+        # 这行是列表推导式：依次处理 args 中的每一个 arg。
         argument_texts = [repr(arg) for arg in args]
 
-        # join() combines the pieces with commas and no additional spaces.
-        # This matches the required example: helperfunction(1,2).
+        # 用逗号连接字符串，不加多余空格，以匹配题目示例的 (1,2)。
+        # 例如 ["1", "2"] 经过 join 后得到 "1,2"。
         arguments = ",".join(argument_texts)
+
+        # func.__name__ 获取原函数名；f 字符串把大括号中的值嵌入文本。
         print(f"@log: {func.__name__}({arguments}) -> {result}")
 
-        # Printing is not the same as returning. The caller must still receive
-        # the original result, so never omit this return statement.
+        # print 只负责显示；return 才负责把结果交给调用者。
+        # 如果漏掉这一行，helperfunction(1, 2) 就会返回 None，而不是 3。
         return result
 
-    # Return the wrapper FUNCTION without parentheses.
-    # Returning wrapper() would call it now instead of saving it for later.
+    # 返回函数本身，供之后调用；这里不能写成 wrapper()。
+    # wrapper() 会立刻执行函数，而不是把函数交出去。
     return wrapper
 
 
-# ===========================================================================
-# Task 4: timeMe Decorator
-# ===========================================================================
-# Measure elapsed time using time.time(), as explicitly required.
-# Support any number of positional arguments; keyword arguments are outside
-# this exercise's required interface, so no **kwargs parameter is included.
-
+# =====================================================================
+# Task 4：timeMe 装饰器——记录函数执行时间
+# 要求：使用 time.time()，支持任意数量的位置参数，不要求关键字参数。
+# =====================================================================
 
 def timeMe(func):
-    """Print the duration of a successful call and preserve its result."""
+    """以毫秒打印一次正常调用的耗时，同时返回原函数结果。"""
 
     @wraps(func)
     def wrapper(*args):
-        # time.time() returns a wall-clock timestamp measured in seconds.
-        # Record it immediately before executing the original function.
+        # 时间戳的单位是秒；先记录函数开始执行前的时间。
         start = time.time()
 
-        # Run the original function exactly once and keep its return value.
-        # *args forwards zero, one, or many positional arguments.
+        # 原函数只执行一次，*args 将接收到的位置参数原样转交给它。
+        # 比如 f()、f(1)、f(1, 2, 3) 都可以使用这个包装函数。
         result = func(*args)
 
-        # Record the timestamp immediately after the function finishes.
-        # Subtract timestamps to obtain elapsed seconds, then convert to ms.
+        # 当前时间减开始时间，得到经过的秒数；乘 1000 转换为毫秒。
+        # 测量范围包括函数内部的计算和 time.sleep 等等待过程。
         elapsed_milliseconds = (time.time() - start) * 1000
 
-        # :.2f displays two digits after the decimal point.
-        # Actual durations vary between runs and between computers.
+        # :.2f 表示以定点数形式保留小数点后两位。
+        # 实际时间因电脑和运行情况而异，不需要等于题目示例的具体数值。
         print(f"@timeMe: {elapsed_milliseconds:.2f} milliseconds")
 
-        # Preserve the original return value, including None or 0.
+        # 保留原函数返回值；原函数没有显式 return 时，结果就是 None。
         return result
 
     return wrapper
 
 
-# ===========================================================================
-# Task 5: memoization Decorator
-# ===========================================================================
-# Memoization means remembering earlier results instead of recomputing them.
-# A cache maps a set of input arguments to the result of that function call.
-# This is appropriate for functions such as fib whose result depends on the
-# inputs and whose repeated execution has no required external side effects.
-
+# =====================================================================
+# Task 5：memo 装饰器——缓存已经计算过的结果
+# =====================================================================
+# Memoization（记忆化）：同一组参数再次出现时，直接使用之前的结果。
+# 对 fib 这类由输入决定结果的函数很合适。
+# 缓存命中时不会再次执行原函数，所以它并不适合所有有副作用的函数。
 
 def memo(func):
-    """Cache results for hashable positional arguments."""
-    # Create the dictionary ONCE for this decorated function.
-    # Every later call to wrapper() shares this dictionary through a closure.
-    # A different function decorated with @memo gets a separate dictionary.
-    # Putting cache = {} inside wrapper() would reset it on every call.
+    """为参数可哈希的位置参数调用缓存结果。"""
+    # 装饰函数时创建字典；不是每次调用 wrapper 都重新创建。
+    # wrapper 通过外层作用域持续使用同一个 cache，这就是闭包的应用。
+    # 如果把 cache = {} 放进 wrapper，每次调用都会清空，无法记住结果。
+    # 不同函数分别使用 @memo 时，会各自获得一个独立字典。
     cache = {}
 
     @wraps(func)
     def wrapper(*args):
-        # Use the whole argument tuple as the dictionary key.
-        # fib(5) uses (5,), while a two-argument call might use (2, 3).
-        # The comma in (5,) marks a one-element tuple.
-        # Dictionary keys must be hashable: integers work, but lists do not.
-        # This exercise uses positional arguments, without keyword arguments.
+        # 使用整个参数元组作为键，返回值作为对应的值。
+        # fib(5) 的键是 (5,)，双参数函数 f(2, 3) 的键是 (2, 3)。
+        # (5,) 中的逗号说明它是单元素元组；(5) 仍然只是数字 5。
+        # 字典的键必须可哈希；整数可以，含有列表的参数元组不可以。
         if args not in cache:
-            # Cache miss: compute the result once and save it.
+            # 没有缓存：真正执行原函数，并保存计算结果。
             cache[args] = func(*args)
 
-        # Cache hit: return the saved result without running func again.
-        # Test key membership, not the truth value of the saved result:
-        # 0, False, and None are also valid results that should be cached.
+        # 已有缓存：跳过上面的计算，直接返回之前存下的结果。
+        # 不使用 if cache.get(args)，因为结果 0、False、None 也要缓存。
         return cache[args]
 
     return wrapper
 
 
+# 先定义 memo，再使用 @memo；此后名称 fib 指向带缓存的包装函数。
 @memo
 def fib(n):
-    """Return the n-th Fibonacci number for a non-negative integer n."""
-    # Base cases: fib(0) = 0 and fib(1) = 1.
+    """返回第 n 个斐波那契数；本题约定 n 是非负整数。"""
+    # 两个递归出口：fib(0) = 0，fib(1) = 1。
     if n < 2:
         return n
     else:
-        # Each later number is the sum of its two predecessors.
-        # After decoration, the name fib refers to memo's wrapper.
-        # Therefore these recursive calls also check the cache.
+        # 后一个数等于前两个数之和，例如 fib(5) = fib(4) + fib(3)。
+        # 这里通过名称 fib 递归调用，因此递归的子问题也会经过缓存。
         return fib(n - 1) + fib(n - 2)
 
 
-# WHY IS fib(35) SLOW WITHOUT MEMOIZATION?
-# Consider fib(5): it requests fib(4) and fib(3).
-# fib(4) also requests fib(3), so the same subproblem is repeated.
-# This duplication continues throughout the recursion tree, causing an
-# exponentially growing number of calls without caching.
-# With @memo, each distinct n is computed once and its result is reused.
-# For fib(35) with a fresh cache, only the 36 distinct inputs 0 through 35
-# need their results calculated. Later fib(35) calls reuse the saved result.
-# Memoization reduces repeated work but still uses memory and recursion.
+# 为什么不用缓存时 fib(35) 很慢？
+# fib(5) 会计算 fib(4) 和 fib(3)，而 fib(4) 又会计算 fib(3) 和 fib(2)。
+# 因此同一个 fib(3) 被重复计算，下面还有更多重复的子问题。
+# 输入增大时，普通递归的调用次数呈指数级增长。
+# 使用 @memo 后，从空缓存开始算 fib(35)，只需要计算 0 到 35 这 36 种输入。
+# 每种输入的结果计算一次，后续调用直接复用，因此避免了大量重复工作。
+# 按每次数值运算视为常数耗时的常见分析，首次计算从指数级降为 O(n)，
+# 同时需要 O(n) 的缓存和递归栈空间；缓存并没有消除递归本身。
 
 
-# ===========================================================================
-# Demonstrations: run this file directly to execute the examples.
-# ===========================================================================
-# This guard prevents printing and sleeping when another file imports the
-# functions. The timing examples below deliberately sleep for 1 + 6 seconds,
-# so a complete direct run takes approximately seven seconds.
+# =====================================================================
+# 运行示例：直接执行本文件时才运行；被其他程序 import 时不会运行。
+# =====================================================================
+# 以下保留题目中的计时示例，会分别等待 1 秒、6 秒，合计约 7 秒。
+# __name__ == "__main__" 是“直接运行本文件”的判断条件。
 
 if __name__ == "__main__":
     print("Task 1: Newton's method with inner functions")
@@ -267,8 +257,8 @@ if __name__ == "__main__":
     def helperfunction(a, b):
         return a + b
 
-    # Prints exactly: @log: helperfunction(1,2) -> 3
-    # Assigning its result also demonstrates that the decorator returns 3.
+    # 第一行日志应为：@log: helperfunction(1,2) -> 3
+    # 再显示 helper_result，验证装饰器确实把 3 返回给了调用者。
     helper_result = helperfunction(1, 2)
     print(f"Returned value: {helper_result}")
 
@@ -276,14 +266,14 @@ if __name__ == "__main__":
 
     @timeMe
     def testFunctionTime():
-        # Avoid naming the variable sum, which would hide Python's sum().
+        # 用 total 命名，避免遮住 Python 内置的 sum 函数。
         total = 0
         for i in range(10000):
             total += i
-        # No explicit return means the function returns None.
 
     @timeMe
     def testFunctionTime2(t):
+        # 暂停 t 秒，因此计时结果应接近 t * 1000 毫秒。
         time.sleep(t)
 
     @timeMe
@@ -298,8 +288,7 @@ if __name__ == "__main__":
     testFunctionTime3(1, 2, 3)
 
     print("\nTask 5: Memoized Fibonacci numbers")
-    print(f"fib(5) = {fib(5)}")       # 5
-    print(f"fib(35) = {fib(35)}")     # 9227465
-    # map() applies fib to each integer from 0 to 19.
-    # list() collects the results so they can be displayed together.
+    print(f"fib(5) = {fib(5)}")       # 应为 5。
+    print(f"fib(35) = {fib(35)}")     # 应为 9227465。
+    # map 把 fib 依次应用到 0 至 19；list 收集这些返回值。
     print(list(map(fib, range(20))))
